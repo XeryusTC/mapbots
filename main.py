@@ -22,4 +22,5 @@ if __name__ == '__main__':
     osm = osmreader.xmlreader.XMLReader()
     osm.load("graphtest.osm")
     osm.filter_ways()
+    osm.filter_nodes()
     osm.export_simple_image()

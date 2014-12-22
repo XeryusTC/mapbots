@@ -13,12 +13,13 @@ class XMLReader:
 
     def load(self, filename):
         """Loads an XML file and stores the relevant OSM elements"""
+        self.logger.info('Loading XML file %s (this might take a while)', filename)
         tree = ET.parse(filename)
         root = tree.getroot()
 
         # Get information about the document
         self.api_version = root.attrib['version']
-        self.logger.info('Loading XML file with OSM API version %s', self.api_version)
+        self.logger.info('Loaded XML file with OSM API version %s', self.api_version)
 
         # Get information about the map
         bounds = root.find('bounds')
@@ -80,6 +81,27 @@ class XMLReader:
         for id in remove:
             del self.ways[id]
         self.logger.info('Removed %d ways', len(remove))
+
+    def filter_nodes(self):
+        """Removes nodes that are not referenced or do not contain any information"""
+        self.logger.info('Removing unnecessary nodes')
+        keep = set()
+        # All nodes that are part of a way are marked to be kept
+        for way in self.ways:
+            keep.update(self.ways[way].nodes)
+
+        # All nodes that contain information should be kept
+        for id, node in self.nodes.items():
+            if len(node.tags) > 0:
+                keep.add(id)
+
+        self.logger.info('Removing %d nodes', len(self.nodes) - len(keep))
+        # Remove all nodes that are not marked to keep
+        new = {}
+        while keep:
+            node = keep.pop()
+            new[node] = self.nodes[node]
+        self.nodes = new
 
     def _parse_tags(self, elem):
         return {tag.attrib['k']: tag.attrib['v'] for tag in elem.findall('tag')}
