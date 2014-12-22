@@ -6,13 +6,14 @@ import osmreader
 # Setup logging
 logger = logging.getLogger('mapbots')
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(name)s - %(message)s')
+long_format = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s: %(message)s')
+short_format = logging.Formatter('[%(levelname)s] %(name)s: %(message)s')
 ch = logging.StreamHandler() # Create console handler
 ch.setLevel(logging.INFO)
-ch.setFormatter(formatter)
+ch.setFormatter(short_format)
 fh = logging.FileHandler('mapbots.log') # create file handler
 fh.setLevel(logging.DEBUG)
-fh.setFormatter(formatter)
+fh.setFormatter(long_format)
 logger.addHandler(ch)
 logger.addHandler(fh)
 
