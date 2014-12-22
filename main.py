@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import logging
+import sys
+
 import osmreader
 
 # Setup logging
@@ -19,8 +21,10 @@ logger.addHandler(fh)
 
 if __name__ == '__main__':
     logger.info('Starting mapbots...')
-    osm = osmreader.xmlreader.XMLReader()
-    osm.load("graphtest.osm")
+    if len(sys.argv) > 1:
+        osm = osmreader.XMLReader(sys.argv[1])
+    else:
+        osm = osmreader.XMLReader("graphtest.osm")
     osm.filter_ways()
     osm.filter_nodes()
     osm.export_simple_image()

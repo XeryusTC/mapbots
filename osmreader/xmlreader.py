@@ -8,8 +8,10 @@ from osmreader.elements import Node, Way
 logger = logging.getLogger('mapbots.osmreader.xmlreader')
 
 class XMLReader:
-    def __init__(self):
+    def __init__(self, filename=None):
         self.logger = logging.getLogger('mapbots.osmreader.xmlreader.XMLReader')
+        if filename:
+            self.load(filename)
 
     def load(self, filename):
         """Loads an XML file and stores the relevant OSM elements"""
