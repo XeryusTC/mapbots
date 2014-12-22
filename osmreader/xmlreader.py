@@ -1,4 +1,6 @@
 import logging
+import math
+from PIL import Image, ImageDraw
 import xml.etree.ElementTree as ET
 
 from osmreader.elements import Node, Way
@@ -10,6 +12,7 @@ class XMLReader:
         self.logger = logging.getLogger('mapbots.osmreader.xmlreader.XMLReader')
 
     def load(self, filename):
+        """Loads an XML file and stores the relevant OSM elements"""
         tree = ET.parse(filename)
         root = tree.getroot()
 
@@ -38,9 +41,45 @@ class XMLReader:
         for way in root.findall('way'):
             w = Way(way.attrib['id'])
             w.tags = self._parse_tags(way)  # Add the tags to the way
-            w.nodes = [node.attrib['ref'] for node in way.findall('nd')]
+            w.nodes = [int(node.attrib['ref']) for node in way.findall('nd')]
             self.ways[int(way.attrib['id'])] = w
         self.logger.info('Number of ways found: %d', len(self.ways))
+
+    def export_simple_image(self, filename='testexport.png'):
+        """Exports the base OSM elements to a file"""
+        self.logger.info('Exporting the current comain to %s', filename)
+        IMAGE_MULTIPLIER = 50000
+        width = math.ceil((self.max_longitude - self.min_longitude) * IMAGE_MULTIPLIER)
+        height = math.ceil((self.max_latitude - self.min_latitude) * IMAGE_MULTIPLIER)
+        im = Image.new('RGB', (width, height), 'white')
+        draw = ImageDraw.Draw(im)
+
+        # Draw all ways (in red)
+        self.logger.info('Drawing the ways')
+        for id, way in self.ways.items():
+            coords = [ ((self.nodes[node].longitude - self.min_longitude) * IMAGE_MULTIPLIER,
+                    (self.nodes[node].latitude - self.min_latitude) * IMAGE_MULTIPLIER) for node in way.nodes]
+            draw.line(coords, fill=(255, 0, 0))
+
+        # draw all nodes as points (in black)
+        self.logger.info('Drawing the nodes')
+        for id, node in self.nodes.items():
+            draw.point( ((node.longitude - self.min_longitude) * IMAGE_MULTIPLIER,
+                (node.latitude - self.min_latitude) * IMAGE_MULTIPLIER), fill=(0, 0, 0))
+
+        im.transpose(Image.FLIP_TOP_BOTTOM).save(filename)
+
+    def filter_ways(self):
+        """Removes ways that are not marked as a highway/road"""
+        self.logger.info('Removing ways that are not marked as \'highway\'')
+        remove = []
+        for id, way in self.ways.items():
+            if 'highway' not in way.tags.keys():
+                remove.append(id)
+
+        for id in remove:
+            del self.ways[id]
+        self.logger.info('Removed %d ways', len(remove))
 
     def _parse_tags(self, elem):
         return {tag.attrib['k']: tag.attrib['v'] for tag in elem.findall('tag')}

@@ -21,3 +21,5 @@ if __name__ == '__main__':
     logger.info('Starting mapbots...')
     osm = osmreader.xmlreader.XMLReader()
     osm.load("graphtest.osm")
+    osm.filter_ways()
+    osm.export_simple_image()
