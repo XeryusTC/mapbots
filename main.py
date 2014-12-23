@@ -28,3 +28,8 @@ if __name__ == '__main__':
     osm.filter_ways()
     osm.filter_nodes()
     osm.export_simple_image()
+
+    graph = osmreader.XMLToGraph(osm)
+    graph.add_ways_to_graph()
+    graph.build_edges_from_endpoints()
+    graph.graph_to_file()

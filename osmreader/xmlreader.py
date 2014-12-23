@@ -1,7 +1,11 @@
 import logging
 import math
-from PIL import Image, ImageDraw
 import xml.etree.ElementTree as ET
+
+from pydotplus import graphviz
+from pygraph.classes.graph import graph
+from pygraph.readwrite import dot as graphtodot
+from PIL import Image, ImageDraw
 
 from osmreader.elements import Node, Way
 
@@ -107,3 +111,48 @@ class XMLReader:
 
     def _parse_tags(self, elem):
         return {tag.attrib['k']: tag.attrib['v'] for tag in elem.findall('tag')}
+
+
+class XMLToGraph:
+    def __init__(self, osm):
+        self.logger = logging.getLogger('mapbots.osmreader.xmlreader.XMLToGraph')
+        self.osm = osm
+        self.graph = graph()
+
+    def find_way_endpoints(self):
+        """Finds all ways that share an endpoint"""
+        self.logger.info('Finding all ways that have the same endpoints')
+        endpoints = {}
+        for id, way in self.osm.ways.items():
+            if way.nodes[0] not in endpoints:
+                endpoints[way.nodes[0]] = set()
+            endpoints[way.nodes[0]].add(id)
+            if way.nodes[-1] not in endpoints:
+                endpoints[way.nodes[-1]] = set()
+            endpoints[way.nodes[-1]].add(id)
+        return endpoints
+
+    def add_ways_to_graph(self):
+        for id, way in self.osm.ways.items():
+            self.graph.add_node(id, [('nodes', way.nodes), ('tags', way.tags)])
+
+    def graph_to_file(self, filename="graph.png"):
+        """Exports the current graph as an image"""
+        self.logger.info('Exporting graph to %s', filename)
+        dot = graphtodot.write(self.graph)  # convert graph to DOT language
+        gvgraph = graphviz.graph_from_dot_data(dot)  # convert DOT language to something we can export as an image
+        gvgraph.write(filename, format='png')
+
+    def build_edges_from_endpoints(self):
+        self.logger.info('Connecting edges based on endpoints that can be found')
+        # Make sure there are nodes to connect
+        if len(self.graph.nodes()) < 1:
+            self.logger.warning('Ways were not added to the map, doing so now')
+            self.add_ways_to_graph()
+        endpoints = self.find_way_endpoints()
+        for id, endpoint in endpoints.items():
+            if len(endpoint) > 1:
+                endpoint = list(endpoint)
+                for i in range(len(endpoint)):
+                    for j in range(i+1, len(endpoint)):
+                        self.graph.add_edge((endpoint[i], endpoint[j]))
