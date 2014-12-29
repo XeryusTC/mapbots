@@ -57,7 +57,7 @@ class MapImageExporter:
             raise AttributeError("'{0}' object has no attribute '{1}'".format(self.__name__, name))
 
     def __setattr__(self, name, value):
-        if name[-6:] == "_color":
+        if name.endswith('_color'):
             if isinstance(value, tuple) and len(value) == 3:
                 self.__colors[name] = value
             elif isinstance(value, str):
