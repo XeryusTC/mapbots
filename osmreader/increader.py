@@ -61,12 +61,23 @@ class IncrementalReader:
                 elif elem.tag == "way":
                     try:
                         w = self.__parse_way(elem)
-                        self.ways[w.id] = w
                     except IncrementalReader.UnusedWayException:
                         pass  # Nothing much to do if we ignore a way
+                    else:
+                        self.ways[w.id] = w
                 root.clear()
         self.logger.info("Found %d nodes", len(self.nodes))
         self.logger.info("Found %d ways", len(self.ways))
+
+        # Add reference to each node that indicates which ways reference the node
+        self.logger.info("Adding reverse node references")
+        for way in self.ways:
+            for node in self.ways[way].nodes:
+                self.nodes[node].ways.append(way)
+
+        # Don't log removing nodes beforehand as it barely takes any time (~1 sec on 61 sec runtime)
+        self.nodes = {id: node for id, node in self.nodes.items() if node.ways or node.tags}
+        self.logger.info("%d nodes remain after removing unused nodes" % len(self.nodes))
 
     def __parse_node(self, xml_node):
         n = Node(xml_node.attrib['id'], xml_node.attrib['lat'], xml_node.attrib['lon'])

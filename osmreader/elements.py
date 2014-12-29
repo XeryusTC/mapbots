@@ -10,6 +10,7 @@ class Node:
         self.latitude = float(latitude)
         self.longitude = float(longitude)
         self.tags = {}
+        self.ways = array.array('q')
 
     def __str__(self):
         return "{id} ({lat}, {lon})".format(id=self.id, lat=self.latitude, lon=self.longitude)
@@ -19,4 +20,4 @@ class Way:
         self.logger = logging.getLogger('mapbots.osmreader.elements.Way')
         self.id = int(id)
         self.tags = {}
-        self.nodes = array.array('l')
+        self.nodes = array.array('q')
