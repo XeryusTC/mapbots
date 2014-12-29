@@ -28,3 +28,6 @@ if __name__ == '__main__':
     exporter = osmreader.MapImageExporter(osm.nodes, osm.ways, osm.min_latitude,
         osm.max_latitude, osm.min_longitude, osm.max_longitude)
     exporter.export()
+    gr = osmreader.IncrementalGraph(osm.nodes, osm.ways)
+    gr.make_graph()
+    gr.graph_to_file()

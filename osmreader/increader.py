@@ -4,6 +4,9 @@ import random
 import xml.etree.ElementTree as ET
 
 from PIL import Image, ImageDraw
+from pydotplus import graphviz
+from pygraph.classes.graph import graph
+from pygraph.readwrite import dot as graphtodot
 from osmreader.elements import Node, Way
 
 logger = logging.getLogger('mapbots.osmreader.increader')
@@ -114,3 +117,33 @@ class IncrementalReader:
         route graph
         """
         pass
+
+
+class IncrementalGraph:
+    def __init__(self, nodes, ways):
+        self.logger = logging.getLogger('mapbots.osmreader.increader.IncrementalGraph')
+        self.nodes = nodes
+        self.ways = ways
+        self.graph = graph()
+
+    def make_graph(self):
+        self.logger.info("Starting to build a graph from %d nodes and %d ways", len(self.nodes), len(self.ways))
+        # Build list of graph nodes
+        for id, way in self.ways.items():
+            self.graph.add_node(id, [('nodes', way.nodes), ('tags', way.tags)])
+
+        # Build list of graph edges
+        for way_id, way in self.ways.items():
+            for node in way.nodes:
+                for ref_way in self.nodes[node].ways:
+                    if way_id != ref_way and not self.graph.has_edge((way_id, ref_way)):
+                        self.graph.add_edge((way_id, ref_way))
+
+    def graph_to_file(self, filename="graph.png"):
+        """Exports the current graph as an image"""
+        self.logger.info('Exporting graph to %s', filename)
+        # convert graph to DOT language
+        dot = graphtodot.write(self.graph)
+        # convert DOT language to something we can export as an image
+        gvgraph = graphviz.graph_from_dot_data(dot)
+        gvgraph.write(filename, format='png')

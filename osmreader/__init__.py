@@ -1,5 +1,5 @@
 from osmreader.xmlreader import XMLReader, XMLToGraph
-from osmreader.increader import IncrementalReader
+from osmreader.increader import IncrementalReader, IncrementalGraph
 from osmreader.exportimage import MapImageExporter
 import logging
 
