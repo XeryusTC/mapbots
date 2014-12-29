@@ -1,3 +1,4 @@
+import array
 import logging
 
 logger = logging.getLogger('mapbots.osmreader.elements')
@@ -18,4 +19,4 @@ class Way:
         self.logger = logging.getLogger('mapbots.osmreader.elements.Way')
         self.id = int(id)
         self.tags = {}
-        self.nodes = []
+        self.nodes = array.array('l')
