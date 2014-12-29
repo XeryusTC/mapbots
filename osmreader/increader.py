@@ -68,30 +68,6 @@ class IncrementalReader:
         self.logger.info("Found %d nodes", len(self.nodes))
         self.logger.info("Found %d ways", len(self.ways))
 
-    def export_image(self, filename='testexport.png'):
-        """Exports the base OSM elements to a file"""
-        self.logger.info('Exporting the current comain to %s', filename)
-        IMAGE_MULTIPLIER = 50000
-        width = math.ceil((self.max_longitude - self.min_longitude) * IMAGE_MULTIPLIER)
-        height = math.ceil((self.max_latitude - self.min_latitude) * IMAGE_MULTIPLIER)
-        im = Image.new('RGB', (width, height), 'white')
-        draw = ImageDraw.Draw(im)
-
-        # Draw all ways (in red)
-        self.logger.info('Drawing the ways')
-        for id, way in self.ways.items():
-            coords = [ ((self.nodes[node].longitude - self.min_longitude) * IMAGE_MULTIPLIER,
-                    (self.nodes[node].latitude - self.min_latitude) * IMAGE_MULTIPLIER) for node in way.nodes]
-            draw.line(coords, fill=(random.randrange(255), random.randrange(255), random.randrange(255)))
-
-        # draw all nodes as points (in black)
-        self.logger.info('Drawing the nodes')
-        for id, node in self.nodes.items():
-            draw.point( ((node.longitude - self.min_longitude) * IMAGE_MULTIPLIER,
-                (node.latitude - self.min_latitude) * IMAGE_MULTIPLIER), fill=(0, 0, 0))
-
-        im.transpose(Image.FLIP_TOP_BOTTOM).save(filename)
-
     def __parse_node(self, xml_node):
         n = Node(xml_node.attrib['id'], xml_node.attrib['lat'], xml_node.attrib['lon'])
         n.tags = self.__parse_tags(xml_node)

@@ -25,4 +25,6 @@ if __name__ == '__main__':
         osm = osmreader.IncrementalReader(sys.argv[1])
     else:
         osm = osmreader.IncrementalReader("graphtest.osm")
-    osm.export_image()
+    exporter = osmreader.MapImageExporter(osm.nodes, osm.ways, osm.min_latitude,
+        osm.max_latitude, osm.min_longitude, osm.max_longitude)
+    exporter.export()
