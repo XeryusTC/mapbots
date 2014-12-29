@@ -3,6 +3,7 @@ import math
 
 from PIL import Image, ImageDraw
 from random import randrange
+from weakref import WeakValueDictionary
 
 logger = logging.getLogger('mapbots.osmreader.exportimage')
 
@@ -12,8 +13,8 @@ class MapImageExporter:
             bg_color="white", enlargement=50000):
         self.logger = logging.getLogger('mapbots.osmreader.exportimage.MapImageExporter')
 
-        self.nodes = nodes
-        self.ways = ways
+        self.nodes = WeakValueDictionary(nodes)
+        self.ways = WeakValueDictionary(ways)
 
         self.enlargement = enlargement
         self.width = math.ceil((max_longitude - min_longitude) * self.enlargement)
