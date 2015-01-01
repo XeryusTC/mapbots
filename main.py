@@ -22,12 +22,6 @@ logger.addHandler(fh)
 if __name__ == '__main__':
     logger.info('Starting mapbots...')
     if len(sys.argv) > 1:
-        osm = osmreader.IncrementalReader(sys.argv[1])
+        osm = osmreader.MultiReader(sys.argv[1])
     else:
-        osm = osmreader.IncrementalReader("graphtest.osm")
-    exporter = osmreader.MapImageExporter(osm.nodes, osm.ways, osm.min_latitude,
-        osm.max_latitude, osm.min_longitude, osm.max_longitude)
-    exporter.export()
-    gr = osmreader.IncrementalGraph(osm.nodes, osm.ways)
-    gr.make_graph()
-    gr.graph_to_file()
+        osm = osmreader.MultiReader("graphtest.osm")
