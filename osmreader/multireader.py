@@ -60,6 +60,7 @@ class MultiReader:
         self.logger = logging.getLogger('mapbots.osmreader.multireader.MultiReader')
         self.nodes = {}
         self.ways = {}
+        self.logqueue = mp.Queue()
         if filename is not None:
             self.load(filename)
 
@@ -80,17 +81,19 @@ class MultiReader:
         elif len(filename) == 0:
             raise ValueError("Filename must not be empty")
 
-        logqueue = mp.Queue()
         elemqueue = mp.Queue()
 
         # Create and start XML parser subprocess
-        parser = mp.Process(target=_xml_parser, args=(logqueue, elemqueue, filename))
+        parser = mp.Process(target=_xml_parser, args=(self.logqueue, elemqueue, filename))
         parser.start()
 
         # Main loop
         self.logger.info("Starting multiprocess main loop")
         running = True
         while running:
+            # Handle (all) queued log messages
+            self._handle_log_queue()
+
             # Handle XML elements
             try:
                 # Get the next element in the XML file
@@ -124,20 +127,24 @@ class MultiReader:
                         else:
                             self.ways[w.id] = w
 
-            # Handle (all) queued log messages
-            try:
-                while True:
-                    record = logqueue.get(False)
-                    logger = logging.getLogger(record.name)
-                    logger.handle(record)
-            except queue.Empty:
-                # There are no more log messages to handle, move back
-                # to handling XML elements
-                pass
         parser.join()
         self.logger.info("Finished multiprocess main loop")
         self.logger.info("Found %d nodes", len(self.nodes))
         self.logger.info("Found %d ways", len(self.ways))
+        # Handle log one more time just to be sure
+        self._handle_log_queue()
+
+    def _handle_log_queue(self):
+        """Reads log records in queue and passes them on to be logged."""
+        try:
+            while True:
+                record = self.logqueue.get(False)
+                logger = logging.getLogger(record.name)
+                logger.handle(record)
+        except queue.Empty:
+            # There are no more log messages to handle, move back
+            # to handling XML elements
+            pass
 
     def _parse_node(self, elem):
         """Parses a node XML element to the Node class.
