@@ -19,7 +19,8 @@ def _xml_parser(logqueue, elemqueue, filename):
     logqueue - The queue where log records have to end up in
     elemqueue - Queue where parsed elements end up in so they can be
                 handled by the rest of the programs
-    filename - The filename of the XML file to parse"""
+    filename - The filename of the XML file to parse
+    """
     # Use only a QueueHandler for the process that runs this code
     # This prevents the process to writing to the log file while the
     # main process also writes to the log file
@@ -31,6 +32,24 @@ def _xml_parser(logqueue, elemqueue, filename):
     # The logger to use for this process
     logger = logging.getLogger('mapbots.osmreader.multireader._xml_parser')
     logger.info("Starting multiprocess XML parser")
+
+    # Parse the root element of the XML
+    try:
+        it = ET.iterparse(filename, events=("start", "end"))
+    except Exception:
+        import traceback
+        logger.error("Failed to load the XML file %s\n%s", filename, traceback.format_exc())
+        elemqueue.put(None)
+        raise
+    else:
+        event, root = next(it)
+        logger.info("Loaded XML file with OSM API version %s", root.attrib['version'])
+
+        for event, elem in it:
+            if event == "end":
+                if elem.tag in ("bounds", "node", "way"):
+                    elemqueue.put(elem)
+                root.clear()
 
     logger.info("Finished parsing XML, exiting parser subprocess")
     elemqueue.put_nowait(None)
