@@ -1,6 +1,4 @@
 import logging
-import math
-import random
 import xml.etree.ElementTree as ET
 
 from PIL import Image, ImageDraw

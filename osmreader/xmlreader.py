@@ -1,5 +1,4 @@
 import logging
-import math
 import xml.etree.ElementTree as ET
 
 from pydotplus import graphviz
