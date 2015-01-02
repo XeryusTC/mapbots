@@ -1,3 +1,4 @@
+import array
 import logging
 import logging.handlers
 import multiprocessing as mp
@@ -5,6 +6,7 @@ import queue
 import xml.etree.cElementTree as ET
 import time
 
+from pygraph.classes.digraph import digraph
 from osmreader.elements import Node, Way
 
 logger = logging.getLogger('mapbots.osmreader.multireader')
@@ -79,6 +81,8 @@ class MultiReader:
         self.logger = logging.getLogger('mapbots.osmreader.multireader.MultiReader')
         self.nodes = {}
         self.ways = {}
+        self.junctions = array.array('q')
+        self.graph = digraph()
 
         self.max_elements_handled = max_elements_handled
 
@@ -280,6 +284,32 @@ class MultiReader:
             new[node] = self.nodes[node]
         self.nodes = new
 
+    def build_graph(self):
+        """Builds the graph from the nodes and ways"""
+        self._find_junctions()
+
+        # Create the nodes for every junction/way combination
+        for way in self.ways:
+            for node in self.ways[way].nodes:
+                if node in self.junctions:
+                    if node in [self.ways[way].nodes[id] for id in (0, -1)]:
+                        # This node is at the end of a way
+                        name = ''.join([str(way), '_start' if node == self.ways[way].nodes[0] else '_end'])
+                        self.graph.add_node(name, attrs=[('tags', self.ways[way].tags), ('way', way)])
+                        self.ways[way].junction_count += 1
+                    else:
+                        # This node is in the middle of a way
+                        name = ''.join([str(way), '_', str(self.ways[way].junction_count)])
+                        self.graph.add_node(''.join([name, '_start']),
+                                           attrs=[('tags', self.ways[way].tags), ('way', way)])
+                        self.graph.add_node(''.join([name, '_end']),
+                                           attrs=[('tags', self.ways[way].tags), ('way', way)])
+                        self.ways[way].junction_count += 1
+
+    def _find_junctions(self):
+        """Generates the list of nodes where ways meet"""
+        j = [node for node in self.nodes if len(self.nodes[node].ways) > 1]
+        self.junctions.extend(j)
 
     class UnusedWayException(Exception):
         """Used to indicate that a way element is useless for pathfinding."""

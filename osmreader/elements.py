@@ -27,6 +27,7 @@ class Way:
         self.id = int(id)
         self.tags = {}
         self.nodes = []
+        self.junction_count = 0
 
     @property
     def nodes(self):
