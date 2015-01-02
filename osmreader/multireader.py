@@ -156,6 +156,12 @@ class MultiReader:
         # Handle log one more time just to be sure
         self._handle_log_queue(True)
 
+        # Add references from nodes to ways that reference those nodes
+        self.logger.info("Adding back-references from nodes to ways")
+        for way in self.ways:
+            for node in self.ways[way].nodes:
+                self.nodes[node].ways.append(way)
+
     def _handle_log_queue(self, ignore_timer=False):
         """Reads log records in queue and passes them on to be logged.
 
