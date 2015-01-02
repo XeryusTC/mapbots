@@ -9,7 +9,7 @@ from osmreader.elements import Node, Way
 
 logger = logging.getLogger('mapbots.osmreader.multireader')
 
-def _xml_parser(logqueue, elemqueue, filename):
+def _xml_parser(logqueue, conn, filename):
     """Parses XML and puts it in a queue, ran as a subprocess
 
     Parses the OSM XML and puts the elements in a queue where they can
@@ -17,8 +17,8 @@ def _xml_parser(logqueue, elemqueue, filename):
 
     Params:
     logqueue - The queue where log records have to end up in
-    elemqueue - Queue where parsed elements end up in so they can be
-                handled by the rest of the programs
+    conn - Connection where parsed elements end up in so they can be
+           handled by the rest of the programs
     filename - The filename of the XML file to parse
     """
     # Use only a QueueHandler for the process that runs this code
@@ -39,7 +39,7 @@ def _xml_parser(logqueue, elemqueue, filename):
     except Exception:
         import traceback
         logger.error("Failed to load the XML file %s\n%s", filename, traceback.format_exc())
-        elemqueue.put(None)
+        conn.send(None)
         raise
     else:
         event, root = next(it)
@@ -48,11 +48,11 @@ def _xml_parser(logqueue, elemqueue, filename):
         for event, elem in it:
             if event == "end":
                 if elem.tag in ("bounds", "node", "way"):
-                    elemqueue.put(elem)
+                    conn.send(elem)
                 root.clear()
 
     logger.info("Finished parsing XML, exiting parser subprocess")
-    elemqueue.put_nowait(None)
+    conn.send(None)
 
 class MultiReader:
     """Uses multiprocessing to split XML parsing and parsing nodes."""
@@ -87,10 +87,9 @@ class MultiReader:
         elif len(filename) == 0:
             raise ValueError("Filename must not be empty")
 
-        elemqueue = mp.Queue()
-
         # Create and start XML parser subprocess
-        parser = mp.Process(target=_xml_parser, args=(self.logqueue, elemqueue, filename))
+        receive_conn, send_conn = mp.Pipe(duplex=False)
+        parser = mp.Process(target=_xml_parser, args=(self.logqueue, send_conn, filename))
         parser.start()
 
         # Main loop
@@ -103,7 +102,7 @@ class MultiReader:
             # Handle XML elements
             try:
                 # Get the next element in the XML file
-                elem = elemqueue.get(False)
+                elem = receive_conn.recv()
             except queue.Empty:
                 # Don't do anything if there are no elements to parse
                 pass
