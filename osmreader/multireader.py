@@ -56,10 +56,13 @@ def _xml_parser(logqueue, conn, filename):
 
 class MultiReader:
     """Uses multiprocessing to split XML parsing and parsing nodes."""
-    def __init__(self, filename=None, *args, handle_log_interval=2):
+    def __init__(self, filename=None, *args, handle_log_interval=2,
+                 max_elements_handled=10000):
         self.logger = logging.getLogger('mapbots.osmreader.multireader.MultiReader')
         self.nodes = {}
         self.ways = {}
+
+        self.max_elements_handled = max_elements_handled
 
         # Set up logging
         self.logqueue = mp.Queue()
@@ -100,13 +103,11 @@ class MultiReader:
             self._handle_log_queue()
 
             # Handle XML elements
-            try:
+            handled = 0
+            while receive_conn.poll() and handled <= self.max_elements_handled:
+                handled += 1
                 # Get the next element in the XML file
                 elem = receive_conn.recv()
-            except queue.Empty:
-                # Don't do anything if there are no elements to parse
-                pass
-            else:
                 # Finish if there are no more elements to parse
                 if elem is None:
                     running = False
