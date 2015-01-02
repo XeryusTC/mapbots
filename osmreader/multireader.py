@@ -2,7 +2,7 @@ import logging
 import logging.handlers
 import multiprocessing as mp
 import queue
-import xml.etree.ElementTree as ET
+import xml.etree.cElementTree as ET
 import time
 
 from osmreader.elements import Node, Way
@@ -56,11 +56,17 @@ def _xml_parser(logqueue, elemqueue, filename):
 
 class MultiReader:
     """Uses multiprocessing to split XML parsing and parsing nodes."""
-    def __init__(self, filename=None):
+    def __init__(self, filename=None, *args, handle_log_interval=2):
         self.logger = logging.getLogger('mapbots.osmreader.multireader.MultiReader')
         self.nodes = {}
         self.ways = {}
+
+        # Set up logging
         self.logqueue = mp.Queue()
+        self.log_interval = handle_log_interval
+        self.log_last_handled = 0
+
+        # If there is something in filename argument then load immediately
         if filename is not None:
             self.load(filename)
 
@@ -132,19 +138,36 @@ class MultiReader:
         self.logger.info("Found %d nodes", len(self.nodes))
         self.logger.info("Found %d ways", len(self.ways))
         # Handle log one more time just to be sure
-        self._handle_log_queue()
+        self._handle_log_queue(True)
 
-    def _handle_log_queue(self):
-        """Reads log records in queue and passes them on to be logged."""
+    def _handle_log_queue(self, ignore_timer=False):
+        """Reads log records in queue and passes them on to be logged.
+
+        Subprocesses log to a queue instead of directly to the log file,
+        they do so to prevent similtanious writes to a file from
+        multiple processes. This function handles records in the queue
+        and logs them instead. This means that these log events will end
+        up in the right log handlers here.
+
+        This function handles logs every X seconds, the exact interval
+        is configured in the ctor with the default being 2 seconds. If
+        the interval has not passed this function does nothing. It is
+        possible to override this timer. If this is done then the timer
+        is still reset.
+
+        Params:
+        ignore_timer - Override the timer"""
+        if not ignore_timer and self.log_last_handled + self.log_interval > time.time():
+            return
+
         try:
             while True:
-                record = self.logqueue.get(False)
+                record = self.logqueue.get_nowait()
                 logger = logging.getLogger(record.name)
                 logger.handle(record)
         except queue.Empty:
-            # There are no more log messages to handle, move back
-            # to handling XML elements
             pass
+        self.log_last_handled = time.time()
 
     def _parse_node(self, elem):
         """Parses a node XML element to the Node class.
