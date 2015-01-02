@@ -222,6 +222,31 @@ class MultiReader:
                 ret[key] = value
         return ret
 
+    def filter_unused_nodes(self):
+        """Removes certain nodes from the list.
+
+        Keeps all nodes that are either used to describe a way or
+        contain data in the form of tags.
+        """
+        self.logger.info("Removing unused nodes")
+        keep = set()
+
+        # All nodes that are part of a way should be kept
+        for way in self.ways:
+            keep.update(self.ways[way].nodes)
+
+        keep.update([node for node in self.nodes if len(self.nodes[node].tags) > 0])
+
+        self.logger.info("Removing %d nodes", len(self.nodes) - len(keep))
+        # Build a new dict out of the IDs stored in the set, then move
+        # it to the class variable
+        new = {}
+        while keep:
+            node = keep.pop()
+            new[node] = self.nodes[node]
+        self.nodes = new
+
+
     class UnusedWayException(Exception):
         """Used to indicate that a way element is useless for pathfinding."""
         pass

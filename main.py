@@ -25,3 +25,4 @@ if __name__ == '__main__':
         osm = osmreader.MultiReader(sys.argv[1])
     else:
         osm = osmreader.MultiReader("graphtest.osm")
+    osm.filter_unused_nodes()
