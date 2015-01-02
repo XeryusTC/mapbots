@@ -58,6 +58,24 @@ class MultiReader:
     """Uses multiprocessing to split XML parsing and parsing nodes."""
     def __init__(self, filename=None, *args, handle_log_interval=2,
                  max_elements_handled=10000):
+        """Initialises the reader and optionally loads a file.
+
+        Params:
+        filename - Name of a file to load, should be a file on a
+                   absolute or relative path. If the argument is None
+                   (default) then you need to call the load method
+                   yourself.
+        handle_log_interval - Logs from subprocesses are handled every
+                              once in a while. You can set the interval
+                              (in seconds) here. Default is every 2
+                              seconds.
+        max_elements_handled - Amount of XML elements to parse before
+                               moving on to other things. Is only
+                               applicable when there are always elements
+                               in the queue to handle. If the queue is
+                               empty then the load function will move on
+                               to doing other things.
+        """
         self.logger = logging.getLogger('mapbots.osmreader.multireader.MultiReader')
         self.nodes = {}
         self.ways = {}
@@ -79,8 +97,6 @@ class MultiReader:
         Starts a subprocess that reads the XML and parses. It is then
         passed back through a queue and handled. OSM Data gets stored in
         class members.
-
-        Logging from the subprocess is also handled here.
 
         Params:
         filename - The file which holds the OSM XML
