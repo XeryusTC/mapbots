@@ -136,12 +136,3 @@ class IncrementalGraph:
                 for ref_way in self.nodes[node].ways:
                     if way_id != ref_way and not self.graph.has_edge((way_id, ref_way)):
                         self.graph.add_edge((way_id, ref_way))
-
-    def graph_to_file(self, filename="graph.png"):
-        """Exports the current graph as an image"""
-        self.logger.info('Exporting graph to %s', filename)
-        # convert graph to DOT language
-        dot = graphtodot.write(self.graph)
-        # convert DOT language to something we can export as an image
-        gvgraph = graphviz.graph_from_dot_data(dot)
-        gvgraph.write(filename, format='png')

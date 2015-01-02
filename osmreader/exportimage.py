@@ -2,6 +2,8 @@ import logging
 import math
 
 from PIL import Image, ImageDraw
+from pydotplus import graphviz
+from pygraph.readwrite import dot as graphtodot
 from random import randrange
 from weakref import WeakValueDictionary
 
@@ -78,3 +80,19 @@ class MapImageExporter:
         else:
             # Use default behaviour for non-colors
             self.__dict__[name] = value
+
+
+def graph_to_file(graph, filename='graph.png'):
+    """Exports a graph to a image file
+
+    Params:
+    graph - The graph to export
+    filename - The destination of the output. The filename should
+               include an extention, the format of the file will always
+               be PNG no matter what the extention is.
+    """
+    logger = logging.getLogger('mapbots.osmreader.exportimage.graph_to_file')
+    logger.info("Exporting a graph to %s", filename)
+    dot = graphtodot.write(graph)
+    gvgraph = graphviz.graph_from_dot_data(dot)
+    gvgraph.write(filename, format='png')

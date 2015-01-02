@@ -111,13 +111,6 @@ class XMLToGraph:
         for id, way in self.osm.ways.items():
             self.graph.add_node(id, [('nodes', way.nodes), ('tags', way.tags)])
 
-    def graph_to_file(self, filename="graph.png"):
-        """Exports the current graph as an image"""
-        self.logger.info('Exporting graph to %s', filename)
-        dot = graphtodot.write(self.graph)  # convert graph to DOT language
-        gvgraph = graphviz.graph_from_dot_data(dot)  # convert DOT language to something we can export as an image
-        gvgraph.write(filename, format='png')
-
     def build_edges_from_endpoints(self):
         self.logger.info('Connecting edges based on endpoints that can be found')
         # Make sure there are nodes to connect
