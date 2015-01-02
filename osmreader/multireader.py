@@ -237,8 +237,19 @@ class MultiReader:
         for tag in elem.findall("tag"):
             key = tag.attrib['k']
             value = tag.attrib['v']
+
+            # Try to convert the tag to a boolean
+            if value.lower in ('t', 'true', 'y', 'yes'):
+                ret[key] = True
+                continue
+            elif value.lower in ('f', 'false', 'n', 'no'):
+                ret[key] = False
+                continue
+
+            # Try to convert the tag to a integer
             if value.isdigit():
                 ret[key] = int(value)
+                continue
             try:
                 ret[key] = float(value)
             except:
