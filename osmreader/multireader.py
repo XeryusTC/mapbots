@@ -286,7 +286,26 @@ class MultiReader:
         self.nodes = new
 
     def build_graph(self):
-        """Builds the graph from the nodes and ways"""
+        """Builds the graph from the nodes and ways.
+
+        Algorithm overview:
+        - Loops over all the ways to determine whether they have any
+          junctions with other ways (or themselves) in them. For each
+          way section between two junction a node is added to the graph.
+          This means that each way gets at least one section.
+        - If a way consists of multiple sections then these sections
+          get edges between them. If a way is one directional then edges
+          are added in the direction that the nodes are defined in.
+          Otherwise edges are added in both directions
+        - Ways are then connected to each other. This is based on the
+          start and end nodes of the sections that make up ways. Each
+          section is checked which other sections it should connect to
+          and these connections are made. It does check for one
+          directional ways while doing this.
+          Because every section is looped over bidirectional crossroads
+          are handled correctly. Sections which can be travelled in both
+          directions are thus bidirectional
+        """
         # Split a way into its subsections between intersections
         self.logger.info("Splitting ways into sections that connect intersections")
         for way in self.ways:
