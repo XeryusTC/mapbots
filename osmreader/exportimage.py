@@ -82,17 +82,28 @@ class MapImageExporter:
             self.__dict__[name] = value
 
 
-def graph_to_file(graph, filename='graph.png'):
-    """Exports a graph to a image file
+def graph_to_file(graph, filename='graph.png', delete_single=False):
+    """Exports a graph to a image file.
 
     Params:
-    graph - The graph to export
+    graph - The graph to export.
     filename - The destination of the output. The filename should
                include an extention, the format of the file will always
                be PNG no matter what the extention is.
+    delete_single - If set to true then all nodes without any neighbours
+                    will be deleted prior to exporting the graph.
     """
     logger = logging.getLogger('mapbots.osmreader.exportimage.graph_to_file')
     logger.info("Exporting a graph to %s", filename)
+
+    # Delete nodes that don't have any neighbours
+    if delete_single:
+        del_nodes = [node for node in graph.nodes() if not graph.neighbors(node)]
+        logger.info("Deleting %d nodes without neighbours", len(del_nodes))
+        for node in del_nodes:
+            graph.del_node(node)
+
+    # Write the graph
     dot = graphtodot.write(graph)
     gvgraph = graphviz.graph_from_dot_data(dot)
     gvgraph.write(filename, format='png')
