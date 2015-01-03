@@ -29,3 +29,12 @@ class Way:
         self.nodes = []
         self.sections = 0
 
+    def is_oneway(self):
+        """Returns whether a way is unidirectional"""
+        # Check whether the oneway tag is explicitly set
+        if 'oneway' in self.tags and self.tags['oneway'] == True:
+            return True
+        # Check if this is a roundabout, which are also one way by implication
+        if 'junction' in self.tags and self.tags['junction'] == 'roundabout':
+            return True
+        return False

@@ -65,7 +65,7 @@ class DirectionalGraphBuilder:
                     if self.ways[way].sections > 0:
                         previous_name = ''.join([str(way), '_', str(self.ways[way].sections-1)])
                         self.graph.add_edge((previous_name, name))
-                        if 'oneway' not in self.ways[way].tags or not self.ways[way].tags['oneway']:
+                        if not self.ways[way].is_oneway():
                             self.graph.add_edge((name, previous_name))
 
                     # Move the last junction marker so the next section
@@ -80,8 +80,7 @@ class DirectionalGraphBuilder:
                 name = ''.join([str(current_way), '_', str(section)])
                 # Only try to connect the start of a section to another
                 # section if the current way is bidirectional
-                oneway = 'oneway' in self.ways[current_way].tags and self.ways[current_way].tags['oneway']
-                if not oneway:
+                if not self.ways[current_way].is_oneway():
                     section_start = self.graph.node_attributes(name)['start_node']
                     self._connect_sections(current_way, name, section_start)
 
@@ -115,7 +114,6 @@ class DirectionalGraphBuilder:
             for other_section in range(self.ways[other_way].sections):
                 other_name = ''.join([str(other_way), '_', str(other_section)])
                 other_attrs = self.graph.node_attributes(other_name)
-                other_oneway = 'oneway' in other_attrs['tags'] and other_attrs['tags']['oneway']
                 # We can always connect from the current way to the
                 # start of another section
                 if other_attrs['start_node'] == node:
@@ -127,7 +125,7 @@ class DirectionalGraphBuilder:
 
                 # Only connect to the end of another section if it is
                 # bidirectional
-                if not other_oneway and other_attrs['end_node'] == node:
+                if not self.ways[other_way].is_oneway() and other_attrs['end_node'] == node:
                     try:
                         self.graph.add_edge((name, other_name))
                     except graphexc.AdditionError:
