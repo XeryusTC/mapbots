@@ -1,3 +1,4 @@
+import geopy.distance
 import logging
 import pygraph.classes.exceptions as graphexc
 
@@ -42,19 +43,29 @@ class DirectionalGraphBuilder:
             # Check if this way consists of multiple sections
             for node in self.ways[way].nodes[1:]:
                 if len(self.nodes[node].ways) > 1:
+                    # A junction in the middle of the way has been found
+                    # Start by calculating the length of the section
+                    s = self.ways[way].nodes.index(last_junction)
+                    e = self.ways[way].nodes.index(node) + 1
+                    path = [(self.nodes[n].latitude, self.nodes[n].longitude) for n in self.ways[way].nodes[s:e]]
+                    length = calculate_distance(path)
+
                     # Add this road section to the graph as a node
                     name = ''.join([str(way), '_', str(self.ways[way].sections)])
                     self.graph.add_node(name,
                                         attrs={'start_node': last_junction,
                                                'end_node': node,
                                                'tags': self.ways[way].tags,
-                                               'way': way})
+                                               'way': way,
+                                               'length': length})
+
                     # Create edges between sections
                     if self.ways[way].sections > 0:
                         previous_name = ''.join([str(way), '_', str(self.ways[way].sections-1)])
                         self.graph.add_edge((previous_name, name))
                         if 'oneway' not in self.ways[way].tags or not self.ways[way].tags['oneway']:
                             self.graph.add_edge((name, previous_name))
+
                     # Move the last junction marker so the next section
                     # starts at the right place
                     last_junction = node
@@ -120,3 +131,27 @@ class DirectionalGraphBuilder:
                     except graphexc.AdditionError:
                         # Ignore adding the same edge twice
                         pass
+
+
+def calculate_distance(points):
+    """Calculates distance as the crow flies between a series of points.
+
+    Takes a sequence of points and calculates the distance between each
+    consecutive pair of points and returns the total distance. The
+    distance is the distance over a surface of a sphere so the points
+    are a (latitude, longitude) tuple. The distance is calculated using
+    the Vincenty method.
+
+    Params:
+    points - A list of (lat, lon) tuples for which the distance needs to
+             be calculated.
+    """
+    if len(points) < 2:
+        raise ValueError("points must be a sequence with at least two components")
+
+    total = 0.0
+    last_point = points[0]
+    for point in points[1:]:
+        total += geopy.distance.distance(last_point, point).m
+        last_point = point
+    return total
