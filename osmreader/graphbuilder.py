@@ -44,9 +44,11 @@ class DirectionalGraphBuilder:
             for node in self.ways[way].nodes[1:]:
                 if len(self.nodes[node].ways) > 1:
                     # A junction in the middle of the way has been found
+
                     # Start by calculating the length of the section
                     s = self.ways[way].nodes.index(last_junction)
-                    e = self.ways[way].nodes.index(node) + 1
+                    # Make sure the end is always further in the sequence than the start
+                    e = self.ways[way].nodes.index(node, s+1) + 1
                     path = [(self.nodes[n].latitude, self.nodes[n].longitude) for n in self.ways[way].nodes[s:e]]
                     length = calculate_distance(path)
 

@@ -29,10 +29,3 @@ class Way:
         self.nodes = []
         self.sections = 0
 
-    @property
-    def nodes(self):
-        return self._nodes
-
-    @nodes.setter
-    def nodes(self, data):
-        self._nodes = array.array('q', data)
