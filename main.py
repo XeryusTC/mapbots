@@ -26,5 +26,6 @@ if __name__ == '__main__':
     else:
         osm = osmreader.MultiReader("graphtest.osm")
     osm.filter_unused_nodes()
-    osm.build_graph()
-    osmreader.graph_to_file(osm.graph, delete_single=True)
+    graph_builder = osmreader.DirectionalGraphBuilder(osm.nodes, osm.ways)
+    graph_builder.build()
+    osmreader.graph_to_file(graph_builder.graph)
