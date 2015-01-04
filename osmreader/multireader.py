@@ -52,6 +52,7 @@ def _xml_parser(logqueue, conn, filename):
             if event == "end":
                 if elem.tag in ("bounds", "node", "way"):
                     conn.send(elem)
+
                 root.clear()
 
     logger.info("Finished parsing XML, exiting parser subprocess")
@@ -160,6 +161,9 @@ class MultiReader:
         self.logger.info("Found %d ways", len(self.ways))
         # Handle log one more time just to be sure
         self._handle_log_queue(True)
+
+        # Filter the ways to remove those that can not be traveled by car
+        self._filter_noncar_ways()
 
         # Add references from nodes to ways that reference those nodes
         self.logger.info("Adding back-references from nodes to ways")
@@ -284,6 +288,29 @@ class MultiReader:
             node = keep.pop()
             new[node] = self.nodes[node]
         self.nodes = new
+
+    def _filter_noncar_ways(self):
+        """Removes all ways that can't be travelled by car."""
+        self.logger.info("Removing all non-car ways")
+        remove = set()
+        # Remove all cycleways
+        for way_id, way in self.ways.items():
+            if way.tags['highway'] == 'cycleway':
+                remove.add(way_id)
+        # Remove based on access restrictions
+        restrictions = (False, 'agricultural', 'delivery', 'no')
+        for way_id, way in self.ways.items():
+            if ('access' in way.tags and way.tags['access'] in restrictions) or \
+                    ('motorcar' in way.tags and way.tags['motorcar'] in restrictions) or \
+                    ('motor_vehicle' in way.tags and way.tags['motor_vehicle'] in restrictions):
+                remove.add(way_id)
+
+        # Remove the ways
+        while remove:
+            way = remove.pop()
+            del self.ways[way]
+
+        self.logger.info("Removed %d ways that can't be travelled by car", len(remove))
 
     class UnusedWayException(Exception):
         """Used to indicate that a way element is useless for pathfinding."""
