@@ -13,6 +13,30 @@ class MapImageExporter:
     def __init__(self, nodes, ways, min_latitude, max_latitude, min_longitude,
             max_longitude, *args, node_color=(0, 0, 0), way_color="allrandom",
             bg_color="white", enlargement=50000):
+        """Export map data (nodes and ways) as a map like image.
+
+        Colour:
+        Colours can be specified in several ways: a 3-tuple specifying a
+        RGB value; the name of a colour as interpreted by PIL (no
+        validity checking is done here); the value "random" which means
+        that a random 3-tuple is picked once and that value is used;
+        "allrandom" which returns a new colour 3-tuple every time the
+        colour is requested, meaning that every time an element is drawn
+        it is drawn with a (pseudo) unique colour.
+
+        Params:
+        nodes - The raw nodes as read by any OSM file reader
+        ways - The raw ways as read by any OSM file reader
+        min_latitude - The southern border of the map
+        max_latitude - The northern border of the map
+        min_longitude - The western border of the map
+        max_longitude - The eastern border of the map
+        node_color - The colour of the nodes in the image (see colour)
+        way_color - The colour of the ways in the image (see colour)
+        bg_color - The colour of the image background
+        enlargement - Multiplication factor from map coordinate to pixel
+                      coordinate. Determines image size.
+        """
         self.logger = logging.getLogger('mapbots.osmreader.exportimage.MapImageExporter')
 
         self.nodes = WeakValueDictionary(nodes)
@@ -30,6 +54,12 @@ class MapImageExporter:
         self.bg_color = bg_color
 
     def export(self, filename="export.png"):
+        """Export the information to an image file
+
+        Params:
+        filename - The filename to export to, must have a valid image
+                   extention. Default: export.png
+        """
         self.logger.info('Exporting a map image to %s', filename)
         im = Image.new('RGB', (self.width, self.height), 'white')
         draw = ImageDraw.Draw(im)
