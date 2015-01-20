@@ -265,11 +265,15 @@ class MultiReader:
                 ret[key] = value
         return ret
 
-    def filter_unused_nodes(self):
+    def filter_unused_nodes(self, aggressive=False):
         """Removes certain nodes from the list.
 
         Keeps all nodes that are either used to describe a way or
         contain data in the form of tags.
+
+        Params:
+        aggressive - Remove nodes that are not in ways but do contain
+                     data
         """
         self.logger.info("Removing unused nodes")
         keep = set()
@@ -278,7 +282,8 @@ class MultiReader:
         for way in self.ways:
             keep.update(self.ways[way].nodes)
 
-        keep.update([node for node in self.nodes if len(self.nodes[node].tags) > 0])
+        if not aggressive:
+            keep.update([node for node in self.nodes if len(self.nodes[node].tags) > 0])
 
         self.logger.info("Removing %d nodes", len(self.nodes) - len(keep))
         # Build a new dict out of the IDs stored in the set, then move
