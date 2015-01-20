@@ -9,13 +9,10 @@ from weakref import WeakValueDictionary
 
 logger = logging.getLogger('mapbots.osmreader.exportimage')
 
-class MapImageExporter:
-    def __init__(self, nodes, ways, min_latitude, max_latitude, min_longitude,
-            max_longitude, *args, node_color=(0, 0, 0), way_color="allrandom",
-            bg_color="white", enlargement=50000):
-        """Export map data (nodes and ways) as a map like image.
+class _ColorManager:
+    def __init__(self):
+        """Handles (random) colours for drawing images.
 
-        Colour:
         Colours can be specified in several ways: a 3-tuple specifying a
         RGB value; the name of a colour as interpreted by PIL (no
         validity checking is done here); the value "random" which means
@@ -23,61 +20,8 @@ class MapImageExporter:
         "allrandom" which returns a new colour 3-tuple every time the
         colour is requested, meaning that every time an element is drawn
         it is drawn with a (pseudo) unique colour.
-
-        Params:
-        nodes - The raw nodes as read by any OSM file reader
-        ways - The raw ways as read by any OSM file reader
-        min_latitude - The southern border of the map
-        max_latitude - The northern border of the map
-        min_longitude - The western border of the map
-        max_longitude - The eastern border of the map
-        node_color - The colour of the nodes in the image (see colour)
-        way_color - The colour of the ways in the image (see colour)
-        bg_color - The colour of the image background
-        enlargement - Multiplication factor from map coordinate to pixel
-                      coordinate. Determines image size.
         """
-        self.logger = logging.getLogger('mapbots.osmreader.exportimage.MapImageExporter')
-
-        self.nodes = WeakValueDictionary(nodes)
-        self.ways = WeakValueDictionary(ways)
-
-        self.enlargement = enlargement
-        self.width = math.ceil((max_longitude - min_longitude) * self.enlargement)
-        self.height = math.ceil((max_latitude - min_latitude) * self.enlargement)
-        self.min_longitude = min_longitude
-        self.min_latitude = min_latitude
-
         self.__colors = {}
-        self.node_color = node_color
-        self.way_color = way_color
-        self.bg_color = bg_color
-
-    def export(self, filename="export.png"):
-        """Export the information to an image file
-
-        Params:
-        filename - The filename to export to, must have a valid image
-                   extention. Default: export.png
-        """
-        self.logger.info('Exporting a map image to %s', filename)
-        im = Image.new('RGB', (self.width, self.height), 'white')
-        draw = ImageDraw.Draw(im)
-
-        # Draw all ways
-        self.logger.info('Drawing the ways')
-        for id, way in self.ways.items():
-            coords = [ ((self.nodes[node].longitude - self.min_longitude) * self.enlargement,
-                    (self.nodes[node].latitude - self.min_latitude) * self.enlargement) for node in way.nodes]
-            draw.line(coords, fill=self.way_color)
-
-        # draw all nodes as points
-        self.logger.info('Drawing the nodes')
-        for id, node in self.nodes.items():
-            draw.point( ((node.longitude - self.min_longitude) * self.enlargement,
-                (node.latitude - self.min_latitude) * self.enlargement), fill=self.node_color)
-
-        im.transpose(Image.FLIP_TOP_BOTTOM).save(filename)
 
     def __getattr__(self, name):
         try:
@@ -110,6 +54,68 @@ class MapImageExporter:
         else:
             # Use default behaviour for non-colors
             self.__dict__[name] = value
+
+
+class MapImageExporter(_ColorManager):
+    def __init__(self, nodes, ways, min_latitude, max_latitude, min_longitude,
+            max_longitude, *args, node_color=(0, 0, 0), way_color="allrandom",
+            bg_color="white", enlargement=50000):
+        """Export map data (nodes and ways) as a map like image.
+
+        Params:
+        nodes - The raw nodes as read by any OSM file reader
+        ways - The raw ways as read by any OSM file reader
+        min_latitude - The southern border of the map
+        max_latitude - The northern border of the map
+        min_longitude - The western border of the map
+        max_longitude - The eastern border of the map
+        node_color - The colour of the nodes in the image
+        way_color - The colour of the ways in the image
+        bg_color - The colour of the image background
+        enlargement - Multiplication factor from map coordinate to pixel
+                      coordinate. Determines image size.
+        """
+        super(MapImageExporter, self).__init__()
+        self.logger = logging.getLogger('mapbots.osmreader.exportimage.MapImageExporter')
+
+        self.nodes = WeakValueDictionary(nodes)
+        self.ways = WeakValueDictionary(ways)
+
+        self.enlargement = enlargement
+        self.width = math.ceil((max_longitude - min_longitude) * self.enlargement)
+        self.height = math.ceil((max_latitude - min_latitude) * self.enlargement)
+        self.min_longitude = min_longitude
+        self.min_latitude = min_latitude
+
+        self.node_color = node_color
+        self.way_color = way_color
+        self.bg_color = bg_color
+
+    def export(self, filename="export.png"):
+        """Export the information to an image file
+
+        Params:
+        filename - The filename to export to, must have a valid image
+                   extention. Default: export.png
+        """
+        self.logger.info('Exporting a map image to %s', filename)
+        im = Image.new('RGB', (self.width, self.height), 'white')
+        draw = ImageDraw.Draw(im)
+
+        # Draw all ways
+        self.logger.info('Drawing the ways')
+        for id, way in self.ways.items():
+            coords = [ ((self.nodes[node].longitude - self.min_longitude) * self.enlargement,
+                    (self.nodes[node].latitude - self.min_latitude) * self.enlargement) for node in way.nodes]
+            draw.line(coords, fill=self.way_color)
+
+        # draw all nodes as points
+        self.logger.info('Drawing the nodes')
+        for id, node in self.nodes.items():
+            draw.point( ((node.longitude - self.min_longitude) * self.enlargement,
+                (node.latitude - self.min_latitude) * self.enlargement), fill=self.node_color)
+
+        im.transpose(Image.FLIP_TOP_BOTTOM).save(filename)
 
 
 def graph_to_file(graph, filename='graph.png', delete_single=False):
