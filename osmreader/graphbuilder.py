@@ -44,34 +44,15 @@ class DirectionalGraphBuilder:
             for node in self.ways[way].nodes[1:]:
                 if len(self.nodes[node].ways) > 1:
                     # A junction in the middle of the way has been found
-
-                    # Start by calculating the length of the section
-                    s = self.ways[way].nodes.index(last_junction)
-                    # Make sure the end is always further in the sequence than the start
-                    e = self.ways[way].nodes.index(node, s+1) + 1
-                    path = [(self.nodes[n].latitude, self.nodes[n].longitude) for n in self.ways[way].nodes[s:e]]
-                    length = calculate_distance(path)
-
-                    # Add this road section to the graph as a node
-                    name = ''.join([str(way), '_', str(self.ways[way].sections)])
-                    self.graph.add_node(name,
-                                        attrs={'start_node': last_junction,
-                                               'end_node': node,
-                                               'tags': self.ways[way].tags,
-                                               'way': way,
-                                               'length': length})
-
-                    # Create edges between sections
-                    if self.ways[way].sections > 0:
-                        previous_name = ''.join([str(way), '_', str(self.ways[way].sections-1)])
-                        self.graph.add_edge((previous_name, name))
-                        if not self.ways[way].is_oneway():
-                            self.graph.add_edge((name, previous_name))
+                    self._build_section(way, last_junction, node)
 
                     # Move the last junction marker so the next section
                     # starts at the right place
                     last_junction = node
-                    self.ways[way].sections += 1
+            else:
+                # Handle ways that have a dead end
+                if last_junction != self.ways[way].nodes[-1]:
+                    self._build_section(way, last_junction, self.ways[way].nodes[-1])
 
         # Connect ways to other ways
         self.logger.info("Connecting ways to other ways")
@@ -131,6 +112,45 @@ class DirectionalGraphBuilder:
                     except graphexc.AdditionError:
                         # Ignore adding the same edge twice
                         pass
+
+    def _build_section(self, way, start_node, end_node):
+        """Builds a section out a way and adds it to the graph.
+
+        Given a way and two nodes in that way this function will
+        construct a section and add it as a node to the graph. It will
+        calculate the length and all the intermediary lat/lon
+        coordinates in that section and store those in the graph too.
+
+        Params:
+        way - The way to build the section for
+        start_node - The ID of the node the section should start at
+        end_node - The ID of the node the section should end at
+        """
+        # Calculate the length of the section
+        s = self.ways[way].nodes.index(start_node)
+        # Make sure the end is always further in the sequence than the
+        # start
+        e = self.ways[way].nodes.index(end_node, s+1) + 1
+        path = [ (self.nodes[n].latitude, self.nodes[n].longitude) for n in self.ways[way].nodes[s:e] ]
+        length = calculate_distance(path)
+
+        # Add the section to the graph as a node
+        name = ''.join([str(way), '_', str(self.ways[way].sections)])
+        attrs = {'start_node': start_node,
+                 'end_node': end_node,
+                 'tags': self.ways[way].tags,
+                 'way': way,
+                 'length': length,
+                 'path': path}
+        self.graph.add_node(name, attrs=attrs)
+
+        # Create edges between sections if there are any
+        if self.ways[way].sections > 0:
+            previous_name = ''.join([str(way), '_', str(self.ways[way].sections-1)])
+            self.graph.add_edge((previous_name, name))
+            if not self.ways[way].is_oneway():
+                self.graph.add_edge((name, previous_name))
+        self.ways[way].sections += 1
 
 
 def calculate_distance(points):
