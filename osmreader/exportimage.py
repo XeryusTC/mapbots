@@ -99,7 +99,7 @@ class MapImageExporter(_ColorManager):
                    extention. Default: export.png
         """
         self.logger.info('Exporting a map image to %s', filename)
-        im = Image.new('RGB', (self.width, self.height), 'white')
+        im = Image.new('RGB', (self.width, self.height), self.bg_color)
         draw = ImageDraw.Draw(im)
 
         # Draw all ways
