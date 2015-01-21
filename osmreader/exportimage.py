@@ -118,6 +118,51 @@ class MapImageExporter(_ColorManager):
         im.transpose(Image.FLIP_TOP_BOTTOM).save(filename)
 
 
+class GraphMapExporter(_ColorManager):
+    def __init__(self, graph, min_lat, max_lat, min_lon, max_lon, *args,
+                 section_color="allrandom", bg_color="white",
+                 enlargement=50000):
+        """Export a (directional) graph as a map image
+
+        Params:
+        graph - The graph to export to a image
+        min_lat - The southern border of the map
+        max_lat - The northern border of the map
+        min_lon - The western border of the map
+        max_lon - The eastern border of the map
+        section_color = The colour of the graph sections in the image
+        bg_color - The colour of the image background
+        enlargement - Multiplication factor from map coordinate to pixel
+                      coordinate. Determines image size.
+        """
+        super(GraphMapExporter, self).__init__()
+        self.logger = logging.getLogger('mapbots.osmreader.exportimage.GraphMapExporter')
+
+        self.graph = graph
+
+        self.enlargement = enlargement
+        self.width = math.ceil((max_lon - min_lon) * self.enlargement)
+        self.height = math.ceil((max_lat - min_lat) * self.enlargement)
+        self.min_lon = min_lon
+        self.min_lat = min_lat
+
+        self.section_color = section_color
+        self.bg_color = bg_color
+
+    def export(self, filename="graph-export.png"):
+        self.logger.info('Exporting a graph to map image %s', filename)
+        im = Image.new('RGB', (self.width, self.height), self.bg_color)
+        draw = ImageDraw.Draw(im)
+
+        # Draw sections
+        for section in self.graph.nodes():
+            attrs = self.graph.node_attributes(section)
+            # Convert the path in the node to image coordinates
+            path = [ ((path[1]-self.min_lon)*self.enlargement, (path[0]-self.min_lat)*self.enlargement) for path in attrs['path'] ]
+            draw.line(path, fill=self.section_color)
+
+        im.transpose(Image.FLIP_TOP_BOTTOM).save(filename)
+
 def graph_to_file(graph, filename='graph.png', delete_single=False):
     """Exports a graph to a image file.
 
