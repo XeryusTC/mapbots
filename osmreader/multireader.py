@@ -294,6 +294,22 @@ class MultiReader:
             new[node] = self.nodes[node]
         self.nodes = new
 
+    def find_bounds(self):
+        """Find map bounds when the file didn't specify them"""
+        try:
+            self.min_latitude
+        except AttributeError:
+            self.min_latitude = self.min_longitude = 180
+            self.max_latitude =  self.max_longitude = -180
+            for id, n in self.nodes.items():
+                self.min_latitude = min(self.min_latitude, n.latitude)
+                self.max_latitude = max(self.max_latitude, n.latitude)
+                self.min_longitude = min(self.min_longitude, n.longitude)
+                self.max_longitude = max(self.max_longitude, n.longitude)
+        self.logger.info("Area of map is defined by (%.4f, %.4f), (%.4f, %.4f)",
+                         self.min_latitude, self.min_longitude,
+                         self.max_latitude, self.max_longitude)
+
     def _filter_noncar_ways(self):
         """Removes all ways that can't be travelled by car."""
         self.logger.info("Removing all non-car ways")
