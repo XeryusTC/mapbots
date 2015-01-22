@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
 
 import logging
+import logging.handlers
 import sys
 
 import osmreader
 
 # Setup logging
-logger = logging.getLogger('mapbots')
+logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 long_format = logging.Formatter('%(asctime)s [%(levelname)s] %(name)s: %(message)s')
 short_format = logging.Formatter('[%(levelname)s] %(name)s: %(message)s')
-ch = logging.StreamHandler() # Create console handler
+ # Create console handler
+ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 ch.setFormatter(short_format)
-fh = logging.FileHandler('mapbots.log') # create file handler
+# Create file handler that keeps 5 files of max 1MB
+fh = logging.handlers.RotatingFileHandler('mapbots.log', maxBytes=1024*1024, backupCount=5)
 fh.setLevel(logging.DEBUG)
 fh.setFormatter(long_format)
+# Add handlers to root element
 logger.addHandler(ch)
 logger.addHandler(fh)
 

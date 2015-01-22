@@ -10,7 +10,7 @@ import time
 from pygraph.classes.digraph import digraph
 from osmreader.elements import Node, Way
 
-logger = logging.getLogger('mapbots.osmreader.multireader')
+logger = logging.getLogger(__name__)
 
 def _xml_parser(logqueue, conn, filename):
     """Parses XML and puts it in a queue, ran as a subprocess
@@ -28,12 +28,12 @@ def _xml_parser(logqueue, conn, filename):
     # This prevents the process to writing to the log file while the
     # main process also writes to the log file
     h = logging.handlers.QueueHandler(logqueue)
-    root = logging.getLogger('mapbots')
+    root = logging.getLogger()
     root.handlers = []
     root.addHandler(h)
 
     # The logger to use for this process
-    logger = logging.getLogger('mapbots.osmreader.multireader._xml_parser')
+    logger = logging.getLogger('.'.join((__name__, '_xml_parser')))
     logger.info("Starting multiprocess XML parser")
 
     # Parse the root element of the XML
@@ -80,7 +80,7 @@ class MultiReader:
                                empty then the load function will move on
                                to doing other things.
         """
-        self.logger = logging.getLogger('mapbots.osmreader.multireader.MultiReader')
+        self.logger = logging.getLogger('.'.join((__name__, type(self).__name__)))
         self.nodes = {}
         self.ways = {}
         self.junctions = array.array('q')
@@ -333,12 +333,12 @@ class MultiReader:
             if ('public_transport' in way.tags and way.tags['public_transport'] in public):
                 remove.add(way_id)
 
+
+        self.logger.info("Removing %d ways that can't be travelled by car", len(remove))
         # Remove the ways
         while remove:
             way = remove.pop()
             del self.ways[way]
-
-        self.logger.info("Removed %d ways that can't be travelled by car", len(remove))
 
     class UnusedWayException(Exception):
         """Used to indicate that a way element is useless for pathfinding."""

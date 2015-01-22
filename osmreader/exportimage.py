@@ -7,7 +7,7 @@ from pygraph.readwrite import dot as graphtodot
 from random import randrange
 from weakref import WeakValueDictionary
 
-logger = logging.getLogger('mapbots.osmreader.exportimage')
+logger = logging.getLogger(__name__)
 
 class _ColorManager:
     def __init__(self):
@@ -76,7 +76,7 @@ class MapImageExporter(_ColorManager):
                       coordinate. Determines image size.
         """
         super(MapImageExporter, self).__init__()
-        self.logger = logging.getLogger('mapbots.osmreader.exportimage.MapImageExporter')
+        self.logger = logging.getLogger('.'.join((__name__, type(self).__name__)))
 
         self.nodes = WeakValueDictionary(nodes)
         self.ways = WeakValueDictionary(ways)
@@ -136,7 +136,7 @@ class GraphMapExporter(_ColorManager):
                       coordinate. Determines image size.
         """
         super(GraphMapExporter, self).__init__()
-        self.logger = logging.getLogger('mapbots.osmreader.exportimage.GraphMapExporter')
+        self.logger = logging.getLogger('.'.join((__name__, type(self).__name__)))
 
         self.graph = graph
 
@@ -174,7 +174,7 @@ def graph_to_file(graph, filename='graph.png', delete_single=False):
     delete_single - If set to true then all nodes without any neighbours
                     will be deleted prior to exporting the graph.
     """
-    logger = logging.getLogger('mapbots.osmreader.exportimage.graph_to_file')
+    logger = logging.getLogger('.'.join((__name__, 'graph_to_file')))
     logger.info("Exporting a graph to %s", filename)
 
     # Delete nodes that don't have any neighbours

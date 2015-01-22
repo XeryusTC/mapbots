@@ -4,11 +4,11 @@ import pygraph.classes.exceptions as graphexc
 
 from pygraph.classes.digraph import digraph
 
-logger = logging.getLogger('mapbots.osmreader.graphbuilder')
+logger = logging.getLogger(__name__)
 
 class DirectionalGraphBuilder:
     def __init__(self, nodes, ways):
-        self.logger = logging.getLogger("mapbots.osmreader.graphbuilder.DirectionalGraphBuilder")
+        self.logger = logging.getLogger('.'.join((__name__, type(self).__name__)))
         self.nodes = nodes
         self.ways = ways
         self.graph = digraph()

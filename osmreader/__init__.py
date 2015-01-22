@@ -3,4 +3,4 @@ from osmreader.multireader import MultiReader
 from osmreader.graphbuilder import DirectionalGraphBuilder
 import logging
 
-logging.getLogger('mapbots.osmreader').addHandler(logging.NullHandler())
+logging.getLogger(__name__).addHandler(logging.NullHandler())

@@ -1,7 +1,7 @@
 import array
 import logging
 
-logger = logging.getLogger('mapbots.osmreader.elements')
+logger = logging.getLogger(__name__)
 
 class Node:
     def __init__(self, id, latitude, longitude):
