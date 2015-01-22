@@ -298,9 +298,11 @@ class MultiReader:
         """Removes all ways that can't be travelled by car."""
         self.logger.info("Removing all non-car ways")
         remove = set()
-        # Remove all cycleways
+        # Remove based on highway type
+        types = ('cycleway', 'path', 'footway', 'steps', 'services',
+                 'pedestrian', 'bus_guideway')
         for way_id, way in self.ways.items():
-            if way.tags['highway'] == 'cycleway':
+            if way.tags['highway'] in types:
                 remove.add(way_id)
         # Remove based on access restrictions
         restrictions = (False, 'agricultural', 'delivery', 'no')
@@ -308,6 +310,11 @@ class MultiReader:
             if ('access' in way.tags and way.tags['access'] in restrictions) or \
                     ('motorcar' in way.tags and way.tags['motorcar'] in restrictions) or \
                     ('motor_vehicle' in way.tags and way.tags['motor_vehicle'] in restrictions):
+                remove.add(way_id)
+        # Remove public transport related
+        public = ('platform',)
+        for way_id, way in self.ways.items():
+            if ('public_transport' in way.tags and way.tags['public_transport'] in public):
                 remove.add(way_id)
 
         # Remove the ways
