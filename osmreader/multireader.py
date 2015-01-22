@@ -136,13 +136,13 @@ class MultiReader:
                 # Handle elements
                 else:
                     if elem.tag == "bounds":
-                        self.min_latitude = float(elem.attrib['minlat'])
-                        self.max_latitude = float(elem.attrib['maxlat'])
-                        self.min_longitude = float(elem.attrib['minlon'])
-                        self.max_longitude = float(elem.attrib['maxlon'])
+                        self.min_lat = float(elem.attrib['minlat'])
+                        self.max_lat = float(elem.attrib['maxlat'])
+                        self.min_lon = float(elem.attrib['minlon'])
+                        self.max_lon = float(elem.attrib['maxlon'])
                         self.logger.info("Area of map is defined by (%.4f, %.4f), (%.4f, %.4f)",
-                                         self.min_latitude, self.min_longitude,
-                                         self.max_latitude, self.max_longitude)
+                                         self.min_lat, self.min_lon,
+                                         self.max_lat, self.max_lon)
                     elif elem.tag == "node":
                         n = self._parse_node(elem)
                         self.nodes[n.id] = n
@@ -297,18 +297,18 @@ class MultiReader:
     def find_bounds(self):
         """Find map bounds when the file didn't specify them"""
         try:
-            self.min_latitude
+            self.min_lat
         except AttributeError:
-            self.min_latitude = self.min_longitude = 180
-            self.max_latitude =  self.max_longitude = -180
+            self.min_lat = self.min_lon = 180
+            self.max_lat =  self.max_lon = -180
             for id, n in self.nodes.items():
-                self.min_latitude = min(self.min_latitude, n.latitude)
-                self.max_latitude = max(self.max_latitude, n.latitude)
-                self.min_longitude = min(self.min_longitude, n.longitude)
-                self.max_longitude = max(self.max_longitude, n.longitude)
+                self.min_lat = min(self.min_lat, n.lat)
+                self.max_lat = max(self.max_lat, n.lat)
+                self.min_lon = min(self.min_lon, n.lon)
+                self.max_lon = max(self.max_lon, n.lon)
         self.logger.info("Area of map is defined by (%.4f, %.4f), (%.4f, %.4f)",
-                         self.min_latitude, self.min_longitude,
-                         self.max_latitude, self.max_longitude)
+                         self.min_lat, self.min_lon,
+                         self.max_lat, self.max_lon)
 
     def _filter_noncar_ways(self):
         """Removes all ways that can't be travelled by car."""

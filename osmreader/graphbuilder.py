@@ -131,7 +131,7 @@ class DirectionalGraphBuilder:
         # Make sure the end is always further in the sequence than the
         # start
         e = self.ways[way].nodes.index(end_node, s+1) + 1
-        path = [ (self.nodes[n].latitude, self.nodes[n].longitude) for n in self.ways[way].nodes[s:e] ]
+        path = [ (self.nodes[n].lat, self.nodes[n].lon) for n in self.ways[way].nodes[s:e] ]
         length = calculate_distance(path)
 
         # Add the section to the graph as a node

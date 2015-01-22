@@ -57,18 +57,18 @@ class _ColorManager:
 
 
 class MapImageExporter(_ColorManager):
-    def __init__(self, nodes, ways, min_latitude, max_latitude, min_longitude,
-            max_longitude, *args, node_color=(0, 0, 0), way_color="allrandom",
-            bg_color="white", enlargement=50000):
+    def __init__(self, nodes, ways, min_lat, max_lat, min_lon, max_lon, *args,
+                 node_color=(0, 0, 0), way_color="allrandom", bg_color="white",
+                 enlargement=50000):
         """Export map data (nodes and ways) as a map like image.
 
         Params:
         nodes - The raw nodes as read by any OSM file reader
         ways - The raw ways as read by any OSM file reader
-        min_latitude - The southern border of the map
-        max_latitude - The northern border of the map
-        min_longitude - The western border of the map
-        max_longitude - The eastern border of the map
+        min_lat - The southern border of the map
+        max_lat - The northern border of the map
+        min_lon - The western border of the map
+        max_lon - The eastern border of the map
         node_color - The colour of the nodes in the image
         way_color - The colour of the ways in the image
         bg_color - The colour of the image background
@@ -82,10 +82,10 @@ class MapImageExporter(_ColorManager):
         self.ways = WeakValueDictionary(ways)
 
         self.enlargement = enlargement
-        self.width = math.ceil((max_longitude - min_longitude) * self.enlargement)
-        self.height = math.ceil((max_latitude - min_latitude) * self.enlargement)
-        self.min_longitude = min_longitude
-        self.min_latitude = min_latitude
+        self.width = math.ceil((max_lon - min_lon) * self.enlargement)
+        self.height = math.ceil((max_lat - min_lat) * self.enlargement)
+        self.min_lon = min_lon
+        self.min_lat = min_lat
 
         self.node_color = node_color
         self.way_color = way_color
@@ -105,15 +105,15 @@ class MapImageExporter(_ColorManager):
         # Draw all ways
         self.logger.info('Drawing the ways')
         for id, way in self.ways.items():
-            coords = [ ((self.nodes[node].longitude - self.min_longitude) * self.enlargement,
-                    (self.nodes[node].latitude - self.min_latitude) * self.enlargement) for node in way.nodes]
+            coords = [ ((self.nodes[node].lon - self.min_lon) * self.enlargement,
+                    (self.nodes[node].lat - self.min_lat) * self.enlargement) for node in way.nodes]
             draw.line(coords, fill=self.way_color)
 
         # draw all nodes as points
         self.logger.info('Drawing the nodes')
         for id, node in self.nodes.items():
-            draw.point( ((node.longitude - self.min_longitude) * self.enlargement,
-                (node.latitude - self.min_latitude) * self.enlargement), fill=self.node_color)
+            draw.point( ((node.lon - self.min_lon) * self.enlargement,
+                (node.lat - self.min_lat) * self.enlargement), fill=self.node_color)
 
         im.transpose(Image.FLIP_TOP_BOTTOM).save(filename)
 
