@@ -38,6 +38,11 @@ def iterative_deepening(graph, start_node, goal_node, max_depth=64, min_depth=8)
 def _iterdeep_rec(graph, current_node, goal_node, max_depth, depth, path=[]):
     """The Depth First Search algorithm used in iterative deepening
 
+    Decreases the branching factor by assuming that each section will
+    get traversed from one end to the other. This is done by registring
+    from which end current way was entered, only neighbours that connect
+    at the opposite end are kept.
+
     Params:
     graph - The graph to do the search on
     current_node - The node where we are continuing the search from
@@ -56,8 +61,25 @@ def _iterdeep_rec(graph, current_node, goal_node, max_depth, depth, path=[]):
     # Base case 2, we have reached the maximum depth, return failure
     elif depth > max_depth:
         return None
-    # Recursive case, look through all the neighbour nodes and try to
-    # find a route continuing from them
+
+    # Recursive case, filter all the nodes so we only expand nodes at
+    # the opposite the end where we entered the section
+    if len(path) > 0:
+        # Find the node we entered on
+        node_info = graph.node_attributes(current_node)
+        prev_node = graph.node_attributes(path[-1])
+        entered_start = node_info['start_node'] in (prev_node['start_node'], prev_node['end_node'])
+
+        new_neighbours = []
+        for neighbour in neighbours:
+            neighbour_info = graph.node_attributes(neighbour)
+            if entered_start and node_info['end_node'] in (neighbour_info['start_node'], neighbour_info['end_node']):
+                new_neighbours.append(neighbour)
+            elif not entered_start and node_info['start_node'] in (neighbour_info['start_node'], neighbour_info['end_node']):
+                new_neighbours.append(neighbour)
+        neighbours = new_neighbours
+
+    # Expand the neighbours
     for neighbour in neighbours:
         # Skip this neighbour if it is already in the path we traversed
         if neighbour in path:
