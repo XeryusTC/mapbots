@@ -56,7 +56,7 @@ class DirectionalGraphBuilder:
                 # The last element in a roundabout should be connected
                 # to the first element
                 try:
-                    if self.ways[way].tags['junction'] == 'roundabout':
+                    if self.ways[way].nodes[0] == self.ways[way].nodes[-1]:
                         first = ''.join([str(way), '_', '0'])
                         last = ''.join([str(way), '_', str(self.ways[way].sections-1)])
                         self.graph.add_edge((last, first))
