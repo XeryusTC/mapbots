@@ -2,9 +2,11 @@
 
 import logging
 import logging.handlers
+import random
 import sys
 
 import osmreader
+from planners import iterdeep
 
 # Setup logging
 logger = logging.getLogger()
@@ -29,7 +31,17 @@ if __name__ == '__main__':
         osm = osmreader.MultiReader(sys.argv[1])
     else:
         osm = osmreader.MultiReader("graphtest.osm")
-    osm.filter_unused_nodes()
+    osm.filter_unused_nodes(True)
+    osm.find_bounds()
     graph_builder = osmreader.DirectionalGraphBuilder(osm.nodes, osm.ways)
     graph_builder.build()
-    osmreader.graph_to_file(graph_builder.graph)
+    gexp = osmreader.GraphMapExporter(graph_builder.graph, osm.min_lat,
+                                      osm.max_lat, osm.min_lon,
+                                      osm.max_lon, section_color="black")
+    gexp.export()
+
+    # Plan path between random nodes
+    nodes = graph_builder.graph.nodes()
+    start = random.choice(nodes)
+    end = random.choice(nodes)
+    path = iterdeep.iterative_deepening(graph_builder.graph, start, end)
