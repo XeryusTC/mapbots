@@ -53,6 +53,15 @@ class DirectionalGraphBuilder:
                 # Handle ways that have a dead end
                 if last_junction != self.ways[way].nodes[-1]:
                     self._build_section(way, last_junction, self.ways[way].nodes[-1])
+                # The last element in a roundabout should be connected
+                # to the first element
+                try:
+                    if self.ways[way].tags['junction'] == 'roundabout':
+                        first = ''.join([str(way), '_', '0'])
+                        last = ''.join([str(way), '_', str(self.ways[way].sections-1)])
+                        self.graph.add_edge((last, first))
+                except KeyError:
+                    pass # The way is not a roundabout
 
         # Connect ways to other ways
         self.logger.info("Connecting ways to other ways")
