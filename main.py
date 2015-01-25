@@ -6,7 +6,7 @@ import random
 import sys
 
 import osmreader
-from planners import iterdeep
+import planners
 
 # Setup logging
 logger = logging.getLogger()
@@ -35,13 +35,19 @@ if __name__ == '__main__':
     osm.find_bounds()
     graph_builder = osmreader.DirectionalGraphBuilder(osm.nodes, osm.ways)
     graph_builder.build()
+    exp = osmreader.MapImageExporter(osm.nodes, osm.ways, osm.min_lat,
+                                     osm.max_lat, osm.min_lon, osm.max_lon)
+    exp.export()
     gexp = osmreader.GraphMapExporter(graph_builder.graph, osm.min_lat,
-                                      osm.max_lat, osm.min_lon,
-                                      osm.max_lon, section_color="black")
+                                      osm.max_lat, osm.min_lon, osm.max_lon)
     gexp.export()
 
     # Plan path between random nodes
     nodes = graph_builder.graph.nodes()
     start = random.choice(nodes)
     end = random.choice(nodes)
-    path = iterdeep.iterative_deepening(graph_builder.graph, start, end)
+    path = planners.iterative_deepening(graph_builder.graph, start, end)
+
+    pexp = planners.GraphPathExporter(graph_builder.graph, path, osm.min_lat,
+                                      osm.max_lat, osm.min_lon, osm.max_lon)
+    pexp.export()
