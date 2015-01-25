@@ -3,6 +3,7 @@ import logging
 import pygraph.classes.exceptions as graphexc
 
 from pygraph.classes.digraph import digraph
+from pygraph.classes.exceptions import AdditionError
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,9 @@ class DirectionalGraphBuilder:
                         self.graph.add_edge((last, first))
                 except KeyError:
                     pass # The way is not a roundabout
+                except AdditionError:
+                    logger.warning("Tried adding a roundabout connection between %s and %s while it already existed",
+                                 first, last)
 
         # Connect ways to other ways
         self.logger.info("Connecting ways to other ways")
