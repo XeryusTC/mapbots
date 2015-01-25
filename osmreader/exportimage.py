@@ -6,11 +6,11 @@ from pydotplus import graphviz
 from pygraph.readwrite import dot as graphtodot
 from weakref import WeakValueDictionary
 
-from util import ColorManager
+from util import MapExporter
 
 logger = logging.getLogger(__name__)
 
-class MapImageExporter(ColorManager):
+class MapImageExporter(MapExporter):
     def __init__(self, nodes, ways, min_lat, max_lat, min_lon, max_lon, *args,
                  node_color=(0, 0, 0), way_color="allrandom", bg_color="white",
                  enlargement=50000):
@@ -29,21 +29,14 @@ class MapImageExporter(ColorManager):
         enlargement - Multiplication factor from map coordinate to pixel
                       coordinate. Determines image size.
         """
-        super(MapImageExporter, self).__init__()
+        super(MapImageExporter, self).__init__(min_lat, max_lat, min_lon, max_lon, bg_color, enlargement)
         self.logger = logging.getLogger('.'.join((__name__, type(self).__name__)))
 
         self.nodes = WeakValueDictionary(nodes)
         self.ways = WeakValueDictionary(ways)
 
-        self.enlargement = enlargement
-        self.width = math.ceil((max_lon - min_lon) * self.enlargement)
-        self.height = math.ceil((max_lat - min_lat) * self.enlargement)
-        self.min_lon = min_lon
-        self.min_lat = min_lat
-
         self.node_color = node_color
         self.way_color = way_color
-        self.bg_color = bg_color
 
     def export(self, filename="export.png"):
         """Export the information to an image file
@@ -53,26 +46,24 @@ class MapImageExporter(ColorManager):
                    extention. Default: export.png
         """
         self.logger.info('Exporting a map image to %s', filename)
-        im = Image.new('RGB', (self.width, self.height), self.bg_color)
-        draw = ImageDraw.Draw(im)
 
         # Draw all ways
         self.logger.info('Drawing the ways')
         for id, way in self.ways.items():
             coords = [ ((self.nodes[node].lon - self.min_lon) * self.enlargement,
                     (self.nodes[node].lat - self.min_lat) * self.enlargement) for node in way.nodes]
-            draw.line(coords, fill=self.way_color)
+            self.draw.line(coords, fill=self.way_color)
 
         # draw all nodes as points
         self.logger.info('Drawing the nodes')
         for id, node in self.nodes.items():
-            draw.point( ((node.lon - self.min_lon) * self.enlargement,
+            self.draw.point( ((node.lon - self.min_lon) * self.enlargement,
                 (node.lat - self.min_lat) * self.enlargement), fill=self.node_color)
 
-        im.transpose(Image.FLIP_TOP_BOTTOM).save(filename)
+        self._save_image(filename)
 
 
-class GraphMapExporter(ColorManager):
+class GraphMapExporter(MapExporter):
     def __init__(self, graph, min_lat, max_lat, min_lon, max_lon, *args,
                  section_color="allrandom", bg_color="white",
                  enlargement=50000):
@@ -89,33 +80,22 @@ class GraphMapExporter(ColorManager):
         enlargement - Multiplication factor from map coordinate to pixel
                       coordinate. Determines image size.
         """
-        super(GraphMapExporter, self).__init__()
+        super(GraphMapExporter, self).__init__(min_lat, max_lat, min_lon, max_lon, bg_color, enlargement)
         self.logger = logging.getLogger('.'.join((__name__, type(self).__name__)))
-
         self.graph = graph
-
-        self.enlargement = enlargement
-        self.width = math.ceil((max_lon - min_lon) * self.enlargement)
-        self.height = math.ceil((max_lat - min_lat) * self.enlargement)
-        self.min_lon = min_lon
-        self.min_lat = min_lat
-
         self.section_color = section_color
-        self.bg_color = bg_color
 
     def export(self, filename="graph-export.png"):
         self.logger.info('Exporting a graph to map image %s', filename)
-        im = Image.new('RGB', (self.width, self.height), self.bg_color)
-        draw = ImageDraw.Draw(im)
 
         # Draw sections
         for section in self.graph.nodes():
             attrs = self.graph.node_attributes(section)
             # Convert the path in the node to image coordinates
             path = [ ((path[1]-self.min_lon)*self.enlargement, (path[0]-self.min_lat)*self.enlargement) for path in attrs['path'] ]
-            draw.line(path, fill=self.section_color)
+            self.draw.line(path, fill=self.section_color)
 
-        im.transpose(Image.FLIP_TOP_BOTTOM).save(filename)
+        self._save_image(filename)
 
 def graph_to_file(graph, filename='graph.png', delete_single=False):
     """Exports a graph to a image file.
