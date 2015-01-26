@@ -32,6 +32,7 @@ class GraphPathExporter(MapExporter):
         self.non_path_color = non_path_color
 
     def export(self, filename="path.png"):
+        self.logger.info('Exporting a graph path to map image %s', filename)
         for section in self.graph.nodes():
             attrs = self.graph.node_attributes(section)
             path = [ ((path[1]-self.min_lon)*self.enlargement, (path[0]-self.min_lat)*self.enlargement) for path in attrs['path'] ]
