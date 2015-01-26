@@ -3,6 +3,8 @@ import heapq
 import logging
 import time
 
+from planners.common import filter_neighbours
+
 logger = logging.getLogger(__name__)
 
 def Astar(graph, start, goal):
@@ -36,6 +38,9 @@ def Astar(graph, start, goal):
         closed.add(current)
         neighbours = graph.neighbors(current)
         # TODO: filter neighbours
+        if current != start:
+            neighbours = filter_neighbours(graph, ancestors[current], current, neighbours)
+
         for neighbour in neighbours:
             # Skip a neighbour if we have already expanded it
             if neighbour in closed:
