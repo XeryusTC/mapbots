@@ -316,7 +316,7 @@ class MultiReader:
         remove = set()
         # Remove based on highway type
         types = ('cycleway', 'path', 'footway', 'steps', 'services',
-                 'pedestrian', 'bus_guideway')
+                 'pedestrian', 'bus_guideway', 'track')
         for way_id, way in self.ways.items():
             if way.tags['highway'] in types:
                 remove.add(way_id)
