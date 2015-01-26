@@ -4,16 +4,20 @@ import logging
 import time
 
 from planners.common import filter_neighbours
+from planners.exporters import GraphAstarExporter
 
 logger = logging.getLogger(__name__)
 
-def Astar(graph, start, goal):
+def Astar(graph, start, goal, with_data=False):
     """Finds a path in a graph using the A* algorithm
 
     Params:
     graph - The graph to do the search in
     start - The start node
     goal - The goal node of the search
+    with_data - When False will only return the path that has been
+                found. When True will return a tuple of the path, the
+                open set and the closed set.
     """
     logger = logging.getLogger('.'.join((__name__, 'A*')))
     logger.info('Using A* to plan a route from %s to %s', start, goal)
@@ -31,8 +35,11 @@ def Astar(graph, start, goal):
         cur_cost, current = heapq.heappop(fringe)
         if current == goal:
             path = construct_path(ancestors, current)
-            logger.info('Found a path with length %d using A* in %f sec',
-                        len(path), time.perf_counter() - start_time)
+            logger.info('Found a path with length %d using A* in %f sec. Sections searched: %d, sections to search: %d',
+                        len(path), time.perf_counter() - start_time, len(closed), len(fringe))
+            if with_data:
+                open_set = [ item[1] for item in fringe ]
+                return (path, open_set, closed)
             return path
 
         closed.add(current)
