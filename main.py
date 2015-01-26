@@ -46,7 +46,7 @@ if __name__ == '__main__':
     nodes = graph_builder.graph.nodes()
     start = random.choice(nodes)
     end = random.choice(nodes)
-    path = planners.iterative_deepening(graph_builder.graph, start, end)
+    path = planners.Astar(graph_builder.graph, start, end)
 
     pexp = planners.GraphPathExporter(graph_builder.graph, path, osm.min_lat,
                                       osm.max_lat, osm.min_lon, osm.max_lon)

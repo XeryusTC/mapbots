@@ -150,7 +150,9 @@ class DirectionalGraphBuilder:
         # Add the section to the graph as a node
         name = ''.join([str(way), '_', str(self.ways[way].sections)])
         attrs = {'start_node': start_node,
+                 'start_point': (self.nodes[start_node].lat, self.nodes[start_node].lon),
                  'end_node': end_node,
+                 'end_point': (self.nodes[end_node].lat, self.nodes[end_node].lon),
                  'tags': self.ways[way].tags,
                  'way': way,
                  'length': length,
