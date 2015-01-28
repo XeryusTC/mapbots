@@ -2,6 +2,9 @@
 
 import itertools
 import logging
+import logging.handlers
+import multiprocessing as mp
+import queue
 import statistics as stat
 import time
 
@@ -25,6 +28,48 @@ def setup_logging():
     logger.addHandler(ch)
     logger.addHandler(fh)
 
+def Astar_worker(graph, taskqueue, resultqueue, logqueue):
+    # Set up logging to use the queue
+    h = logging.handlers.QueueHandler(logqueue)
+    root = logging.getLogger()
+    root.handlers = []
+    root.addHandler(h)
+
+    logger = logging.getLogger('A*_worker')
+    logger.info("Starting A* benchmark subprocess")
+
+    for id, start, end in iter(taskqueue.get, None):
+        # Run A* and record its runtime
+        start_time = time.perf_counter()
+        path, open_set, closed_set = planners.Astar(graph, start, end, True)
+        time_taken = time.perf_counter() - start_time
+        # Create the statistics and report them to the main process
+        length = sum([ graph.node_attributes(section)['length'] for section in path ])
+        data = (id, start, end, 0, len(path), length, len(open_set), len(closed_set), time_taken)
+        resultqueue.put(data)
+        # Report that we have finished the benchmark
+        taskqueue.task_done()
+    # Notify that we processed the stop signal
+    taskqueue.task_done()
+    logger.info("Exiting A* benchmark subprocess")
+
+def process_subprocess_logs(logqueue):
+    try:
+        while True:
+            record = logqueue.get_nowait()
+            logger = logging.getLogger(record.name)
+            logger.handle(record)
+    except queue.Empty:
+        pass
+
+def process_result_queue(resultqueue, logs):
+    try:
+        while True:
+            record = resultqueue.get_nowait()
+            logs.append(record)
+    except queue.Empty:
+        pass
+
 def Astar_benchmark(runs=100):
     logger = logging.getLogger('A*_benchmark')
 
@@ -41,28 +86,45 @@ def Astar_benchmark(runs=100):
     paths = list(itertools.permutations(sections, 2))
     logs = []
 
-    logger.info("Starting A* benchmark, running %d benchmarks %d times", len(paths), runs)
+    # Set up for the subprocesses
+    taskqueue = mp.JoinableQueue()
+    resultqueue = mp.Queue()
+    logqueue = mp.Queue()
+    # Use all cores but leave one for the main process
+    process_count = max(2, mp.cpu_count() - 2)
+
+    # Start the subprocesses before adding the tasks so they can get
+    # started right away before we added several thousand (or more)
+    # items to the task queue
+    processes = [mp.Process(target=Astar_worker, args=(graph.graph, taskqueue, resultqueue, logqueue)) for i in range(process_count)]
+    for p in processes:
+        p.start()
+
+    # Add the tasks and process logs and results until we are done
+    logger.info("Creating benchmarks to run")
     total_time = time.perf_counter()
     j = 0 # benchmark number counter
     for start, end in paths:
-        start_time = time.perf_counter()
-        times = []
+        process_subprocess_logs(logqueue)
         for i in range(runs):
-            single_time = time.perf_counter()
-            path, open_set, closed_set = planners.Astar(graph.graph, start, end, True)
+            taskqueue.put((j, start, end))
+            j += 1
+    for i in range(process_count):
+        taskqueue.put(None)
 
-            # Add to statistics list
-            time_taken = time.perf_counter() - single_time
-            times.append(time_taken)
-            # Calculate path length
-            length = sum([ graph.graph.node_attributes(section)['length'] for section in path])
-            logs.append((j, start, end, i, len(path), length, len(open_set), len(closed_set), time_taken))
-        # Log statistics
-        logger.info("Ran %d benchmarks from %s to %s for %f sec", runs, start, end, time.perf_counter() - start_time)
-        logger.info("Lengths: path %d, open set %d, closed set %d",
-                     len(path), len(open_set), len(closed_set))
-        j += 1
-    logger.info("Took %f sec to run benchmark and generate statistics", time.perf_counter() - total_time)
+    while taskqueue.qsize() > process_count * 2:
+        process_subprocess_logs(logqueue)
+        process_result_queue(resultqueue, logs)
+        time.sleep(1) # Allow the CPU some rest
+
+    # Wait for all processes to finish and process results one final time
+    taskqueue.join()
+    process_subprocess_logs(logqueue)
+    for p in processes:
+        p.join()
+    process_result_queue(resultqueue, logs)
+    process_subprocess_logs(logqueue)
+    logger.info("Finished running benchmarks, total time spend: %f sec", time.perf_counter() - total_time)
 
     logger.info("Generating A* sum statistics")
     logsT = list(zip(*logs)) # Transpose logs
