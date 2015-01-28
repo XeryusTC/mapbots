@@ -70,7 +70,7 @@ def process_result_queue(resultqueue, logs):
     except queue.Empty:
         pass
 
-def Astar_benchmark(runs=100):
+def Astar_benchmark(runs=20):
     logger = logging.getLogger('A*_benchmark')
 
     logger.info("Setting up A* benchmark")
@@ -82,7 +82,7 @@ def Astar_benchmark(runs=100):
 
     # Generate paths starts
     sections = ['6398654_5', '6455545_1', '6394116_3', '6398167_0', '6394550_1',
-                '6454161_1', '6389831_0','29090917_0', '6456937_2', '6398969_0']
+                '6454161_1', '6389831_0']
     paths = list(itertools.permutations(sections, 2))
     logs = []
 
