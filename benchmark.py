@@ -72,6 +72,7 @@ def Astar_benchmark(runs=100):
     logger.info("Open set         | {:11.4f} | {:11.4f} | {:11.4f}".format(stat.mean(logsT[6]), stat.median(logsT[6]), stat.stdev(logsT[6])))
     logger.info("Closed set       | {:11.4f} | {:11.4f} | {:11.4f}".format(stat.mean(logsT[7]), stat.median(logsT[7]), stat.stdev(logsT[7])))
     logger.info("Run time (s)     | {:11.4f} | {:11.4f} | {:11.4f}".format(stat.mean(logsT[8]), stat.median(logsT[8]), stat.stdev(logsT[8])))
+    logger.info("Total time spend in A*: %f sec", sum(logsT[8]))
 
 if __name__ == '__main__':
     setup_logging()
