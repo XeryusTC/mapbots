@@ -3,7 +3,7 @@ import heapq
 import logging
 import time
 
-from planners.common import filter_neighbours, find_side_entered
+from planners.common import *
 from planners.exporters import GraphAstarExporter
 
 logger = logging.getLogger(__name__)
@@ -43,10 +43,14 @@ def Astar(graph, start, goal, with_data=False):
             return path
 
         closed.add(current)
+
         neighbours = graph.neighbors(current)
-        # TODO: filter neighbours
         if current != start:
             entered_side = find_side_entered(graph, ancestors[current], current)
+            if entered_side == ENTERED_START:
+                exit_node = graph.node_attributes(current)['end_point']
+            else:
+                exit_node = graph.node_attributes(current)['start_point']
             neighbours = filter_neighbours(graph, entered_side, current, neighbours)
 
         for neighbour in neighbours:
@@ -61,7 +65,10 @@ def Astar(graph, start, goal, with_data=False):
                     # Update neighbour in the fringe
                     ancestors[neighbour] = current
                     g[neighbour] = new_g
-                    f = new_g + predicted_cost(graph, neighbour, goal)
+                    if current != start:
+                        f = new_g + predicted_cost_fast(graph, neighbour, goal, exit_node)
+                    else:
+                        f = new_g + predicted_cost(graph, neighbour, goal)
                     # Replace the element in the fringe
                     fringe.remove( (cost, section) )
                     heapq.heapify(fringe)
@@ -71,7 +78,10 @@ def Astar(graph, start, goal, with_data=False):
                 # Neighbour is not in the fringe yet
                 ancestors[neighbour] = current
                 g[neighbour] = new_g
-                f = new_g + predicted_cost(graph, neighbour, goal)
+                if current != start:
+                    f = new_g + predicted_cost_fast(graph, neighbour, goal, exit_node)
+                else:
+                    f = new_g + predicted_cost(graph, neighbour, goal)
                 heapq.heappush(fringe, (f, neighbour))
     print("fell through")
 
@@ -98,6 +108,31 @@ def predicted_cost(graph, current, goal):
                gdistance.distance(cattrs['start_point'], gattrs['end_point']).m,
                gdistance.distance(cattrs['end_point'], gattrs['start_point']).m,
                gdistance.distance(cattrs['end_point'], gattrs['end_point']).m)
+
+
+def predicted_cost_fast(graph, current, goal, entered_node):
+    """Calculates h(n) based on shortest as-the-crow-flies path
+
+    This is an optimised version of predicted_cost(). It does only half
+    the distance calculations because it is informed about which end the
+    current section is exited from.
+
+    Params:
+    graph - The graph containing where a path is being planned through
+    current - The node the heuristic is calculated for
+    goal - The goal of the search
+    entered_node - The node ID where current gets entered. This should
+                   be the node ID as given by OSM, or the value that is
+                   stored in 'start_node' or 'end_node' on the section
+    """
+    cattrs = graph.node_attributes(current)
+    gattrs = graph.node_attributes(goal)
+    if cattrs['start_point'] == entered_node:
+        return min(gdistance.distance(cattrs['end_point'], gattrs['start_point']).m,
+                   gdistance.distance(cattrs['end_point'], gattrs['end_point']).m)
+    else:
+        return min(gdistance.distance(cattrs['start_point'], gattrs['start_point']).m,
+                   gdistance.distance(cattrs['start_point'], gattrs['end_point']).m)
 
 def construct_path(ancestors, end):
     """Constructs the path based on ancestor information
