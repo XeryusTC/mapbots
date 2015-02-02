@@ -3,7 +3,7 @@ import time
 
 logger = logging.getLogger(__name__)
 
-from planners.common import filter_neighbours
+from planners.common import filter_neighbours, find_side_entered
 from pygraph.classes.digraph import digraph
 
 def iterative_deepening(graph, start_node, goal_node, max_depth=64, min_depth=1):
@@ -63,7 +63,8 @@ def _iterdeep_rec(graph, current_node, goal_node, max_depth, path=[]):
     # Filter all the nodes so we only expand nodes at the opposite the
     # end where we entered the section
     if len(path) > 0:
-        neighbours = filter_neighbours(graph, path[-1], current_node, neighbours)
+        entered_side = find_side_entered(graph, path[-1], current_node)
+        neighbours = filter_neighbours(graph, entered_side, current_node, neighbours)
 
     # Base case 2, the goal node is in the list of neighbours, return
     # success + the found path

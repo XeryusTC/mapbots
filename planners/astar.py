@@ -3,7 +3,7 @@ import heapq
 import logging
 import time
 
-from planners.common import filter_neighbours
+from planners.common import filter_neighbours, find_side_entered
 from planners.exporters import GraphAstarExporter
 
 logger = logging.getLogger(__name__)
@@ -46,7 +46,8 @@ def Astar(graph, start, goal, with_data=False):
         neighbours = graph.neighbors(current)
         # TODO: filter neighbours
         if current != start:
-            neighbours = filter_neighbours(graph, ancestors[current], current, neighbours)
+            entered_side = find_side_entered(graph, ancestors[current], current)
+            neighbours = filter_neighbours(graph, entered_side, current, neighbours)
 
         for neighbour in neighbours:
             # Skip a neighbour if we have already expanded it
